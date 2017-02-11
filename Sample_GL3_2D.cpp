@@ -11,6 +11,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "myconstants.h"
 
 using namespace std;
 
@@ -37,18 +38,6 @@ GLuint programID;
 double last_update_time, current_time;
 glm::vec3 rect_pos, floor_pos;
 float rectangle_rotation = 0;
-int a[3][4] = {
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-};
 
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
@@ -352,153 +341,34 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     // Store the projection matrix in a variable for future use
     // Perspective projection for 3D views
     Matrices.projection = glm::perspective(fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
-
-    // Ortho projection for 2D views
-    //Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 500.0f);
 }
 
-VAO *rectangle, *cam, *floor_vao;
+VAO *Tile, *Triangle;
 
 // Creates the rectangle object used in this sample code
-void createRectangle ()
-{
-    // GL3 accepts only Triangles. Quads are not supported
-    static const GLfloat vertex_buffer_data [] = {
-	-0.5, 0.5, 0.5,
-	-0.5, -0.5, 0.5,
-	0.5, -0.5, 0.5,
-	-0.5, 0.5, 0.5,
-	0.5, -0.5, 0.5,
-	0.5, 0.5, 0.5,
-	0.5, 0.5, 0.5,
-	0.5, -0.5, 0.5,
-	0.5, -0.5, -0.5,
-	0.5, 0.5, 0.5,
-	0.5, -0.5, -0.5,
-	0.5, 0.5, -0.5,
-	0.5, 0.5, -0.5,
-	0.5, -0.5, -0.5,
-	-0.5, -0.5, -0.5,
-	0.5, 0.5, -0.5,
-	-0.5, -0.5, -0.5,
-	-0.5, 0.5, -0.5,
-	-0.5, 0.5, -0.5,
-	-0.5, -0.5, -0.5,
-	-0.5, -0.5, 0.5,
-	-0.5, 0.5, -0.5,
-	-0.5, -0.5, 0.5,
-	-0.5, 0.5, 0.5,
-	-0.5, 0.5, -0.5,
-	-0.5, 0.5, 0.5,
-	0.5, 0.5, 0.5,
-	-0.5, 0.5, -0.5,
-	0.5, 0.5, 0.5,
-	0.5, 0.5, -0.5,
-	-0.5, -0.5, 0.5,
-	-0.5, -0.5, -0.5,
-	0.5, -0.5, -0.5,
-	-0.5, -0.5, 0.5,
-	0.5, -0.5, -0.5,
-	0.5, -0.5, 0.5,
-	-0.5, 0.5, 0.5,
-	0.5, 0.5, -0.5,
-	0.5, 0.75, -0.5,
-    };
-
-    static const GLfloat color_buffer_data [] = {
-	1.0f, 1.0f, 0.0f,
-	1.0f, 1.0f, 0.0f,
-	1.0f, 1.0f, 0.0f,
-	1.0f, 1.0f, 0.0f,
-	1.0f, 1.0f, 0.0f,
-	1.0f, 1.0f, 0.0f,
-	1.0f, 0.0f, 1.0f,
-	1.0f, 0.0f, 1.0f,
-	1.0f, 0.0f, 1.0f,
-	1.0f, 0.0f, 1.0f,
-	1.0f, 0.0f, 1.0f,
-	1.0f, 0.0f, 1.0f,
-	0.0f, 1.0f, 1.0f,
-	0.0f, 1.0f, 1.0f,
-	0.0f, 1.0f, 1.0f,
-	0.0f, 1.0f, 1.0f,
-	0.0f, 1.0f, 1.0f,
-	0.0f, 1.0f, 1.0f,
-	1.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0, 0, 0,
-	0, 0, 0,
-	1, 1, 1,
-    };
-
-    // create3DObject creates and returns a handle to a VAO that can be used later
-    rectangle = create3DObject(GL_TRIANGLES, 13*3, vertex_buffer_data, color_buffer_data, GL_FILL);
+void createTile (){
+    Tile = create3DObject(GL_TRIANGLES, 12*3, square_vertex, grey_color, GL_FILL);
 }
-void createCam ()
-{
-    // GL3 accepts only Triangles. Quads are not supported
-    static const GLfloat vertex_buffer_data [] = {
-	-0.1, 0, 0,
-	0.1, 0, 0,
-	0, 0.1, 0,
-    };
 
-    static const GLfloat color_buffer_data [] = {
-	1, 1, 1,
-	1, 1, 1,
-	1, 1, 1,
-    };
-
-    // create3DObject creates and returns a handle to a VAO that can be used later
-    cam = create3DObject(GL_TRIANGLES, 1*3, vertex_buffer_data, color_buffer_data, GL_LINE);
-}
-void createFloor ()
-{
-    // GL3 accepts only Triangles. Quads are not supported
-    static const GLfloat vertex_buffer_data [] = {
-	-2, -1, 2,
-	2, -1, 2,
-	-2, -1, -2,
-	-2, -1, -2,
-	2, -1, 2,
-	2, -1, -2,
-    };
-
-    static const GLfloat color_buffer_data [] = {
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-	0.65, 0.165, 0.165,
-    };
-
-    // create3DObject creates and returns a handle to a VAO that can be used later
-    floor_vao = create3DObject(GL_TRIANGLES, 2*3, vertex_buffer_data, color_buffer_data, GL_FILL);
-}
 
 float camera_rotation_angle = 90;
 
-/* Render the scene with openGL */
-/* Edit this function according to your assignment */
-void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP)
-{
+/* Render the object with openGL */
+void render(VAO *object , glm::mat4 VP , float angle , float x , float y , float z, float sx, float sy, float sz){
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translateObject = glm::translate (glm::vec3(x, y, z)); // glTranslatef
+  glm::mat4 rotateObject = glm::rotate((float)(angle*M_PI/180.0f), glm::vec3(0,0,1));  // rotate about vector (1,0,0)
+  glm::mat4 scaleObject = glm::scale(glm::mat4(1.0f), glm::vec3(sx, sy, sz));
+  glm::mat4 objectTransform =translateObject *  scaleObject *  rotateObject;
+  Matrices.model *= objectTransform;
+  glm::mat4 MVP = VP * Matrices.model; // MVP = p * V * M
+
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+
+  draw3DObject(object);
+}
+
+void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int doV, int doP){
     int fbwidth, fbheight;
     glfwGetFramebufferSize(window, &fbwidth, &fbheight);
     glViewport((int)(x*fbwidth), (int)(y*fbheight), (int)(w*fbwidth), (int)(h*fbheight));
@@ -510,65 +380,25 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
     glUseProgram(programID);
 
     // Eye - Location of camera. Don't change unless you are sure!!
-    glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
+    glm::vec3 eye ( 100*cos(camera_rotation_angle*M_PI/180.0f), 100, 100*sin(camera_rotation_angle*M_PI/180.0f) );
     // Target - Where is the camera looking at.  Don't change unless you are sure!!
     glm::vec3 target (0, 0, 0);
     // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
     glm::vec3 up (0, 1, 0);
 
     // Compute Camera matrix (view)
-    if(doV)
 	Matrices.view = glm::lookAt(eye, target, up); // Fixed camera for 2D (ortho) in XY plane
-    else
-	Matrices.view = glm::mat4(1.0f);
 
     // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
     glm::mat4 VP;
-    if (doP)
+
 	VP = Matrices.projection * Matrices.view;
-    else
-	VP = Matrices.view;
 
-    // Send our transformation to the currently bound shader, in the "MVP" uniform
-    // For each model you render, since the MVP will be different (at least the M part)
-    glm::mat4 MVP;	// MVP = Projection * View * Model
-
-    // Load identity to model matrix
-    Matrices.model = glm::mat4(1.0f);
-
-    glm::mat4 translateRectangle = glm::translate (rect_pos);        // glTranslatef
-    glm::mat4 rotateRectangle = glm::rotate((float)(rectangle_rotation*M_PI/180.0f), glm::vec3(0,0,1));
-    Matrices.model *= (translateRectangle * rotateRectangle);
-    if(floor_rel)
-	Matrices.model = Matrices.model * glm::translate(floor_pos);
-    if(doM)
-	MVP = VP * Matrices.model;
-    else
-	MVP = VP;
-    glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-    // draw3DObject draws the VAO given to it using current MVP matrix
-    draw3DObject(rectangle);
-
-    // Load identity to model matrix
-    Matrices.model = glm::mat4(1.0f);
-
-    glm::mat4 translateCam = glm::translate(eye);
-    glm::mat4 rotateCam = glm::rotate((float)((90 - camera_rotation_angle)*M_PI/180.0f), glm::vec3(0,1,0));
-    Matrices.model *= (translateCam * rotateCam);
-    MVP = VP * Matrices.model;
-    glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-    // draw3DObject draws the VAO given to it using current MVP matrix
-    draw3DObject(cam);
-
-    Matrices.model = glm::translate(floor_pos);
-    MVP = VP * Matrices.model;
-    glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
-
-    // draw3DObject draws the VAO given to it using current MVP matrix
-    draw3DObject(floor_vao);
-
+  for ( int i=0; i<fsizex; i++)
+    for (int j=0; j<fsizey; j++)
+      if (GameMap[i][j]==0)
+        render(Tile, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 9.0f, 2.0f, 9.0f);
+  //render(Triangle, VP, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -608,13 +438,22 @@ GLFWwindow* initGLFW (int width, int height){
 
 /* Initialize the OpenGL rendering properties */
 /* Add all the models to be created here */
-void initGL (GLFWwindow* window, int width, int height)
-{
+void initGL (GLFWwindow* window, int width, int height){
     /* Objects should be created before any other gl function and shaders */
     // Create the models
-    createRectangle ();
-    createCam();
-    createFloor();
+    createTile ();
+static const GLfloat vertex [] = {
+    -2.0, 2.0, 2.0,
+    -2.0, -2.0, 2.0,
+    2.0, -2.0, 2.0,
+};
+static const GLfloat color [] = {
+1.0, 0.0, 0.0,
+1.0, 0.0, 0.0,
+1.0, 0.0, 0.0,
+};
+
+    Triangle = create3DObject(GL_TRIANGLES, 3, vertex, color, GL_FILL);
 
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
@@ -625,16 +464,11 @@ void initGL (GLFWwindow* window, int width, int height)
     reshapeWindow (window, width, height);
 
     // Background color of the scene
-    glClearColor (0.3f, 0.3f, 0.3f, 0.0f); // R, G, B, A
+    glClearColor (1.0f, 1.0f, 1.0f, 0.0f); // R, G, B, A
     glClearDepth (1.0f);
 
     glEnable (GL_DEPTH_TEST);
     glDepthFunc (GL_LEQUAL);
-
-    // cout << "VENDOR: " << glGetString(GL_VENDOR) << endl;
-    // cout << "RENDERER: " << glGetString(GL_RENDERER) << endl;
-    // cout << "VERSION: " << glGetString(GL_VERSION) << endl;
-    // cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 }
 
 int main (int argc, char** argv)
@@ -645,6 +479,7 @@ int main (int argc, char** argv)
     floor_pos = glm::vec3(0, 0, 0);
     do_rot = 0;
     floor_rel = 1;
+    cout << GameMap[0][0] << endl;
 
     GLFWwindow* window = initGLFW(width, height);
     initGLEW();
