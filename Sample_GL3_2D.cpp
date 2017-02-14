@@ -23,8 +23,7 @@ struct VAO {
     GLenum PrimitiveMode;
     GLenum FillMode;
     int NumVertices;
-};
-typedef struct VAO VAO;
+};typedef struct VAO VAO;
 
 struct GLMatrices {
     glm::mat4 projection;
@@ -33,11 +32,20 @@ struct GLMatrices {
     GLuint MatrixID;
 } Matrices;
 
+struct BrickState {
+  int pos[2][2];
+  bool status;
+  char rotDirection;
+}typedef BrickState;
+
 int do_rot, floor_rel;;
 GLuint programID;
 double last_update_time, current_time;
 glm::vec3 rect_pos, floor_pos;
 float rectangle_rotation = 0;
+BrickState state;
+bool Inrotation=1;
+float blockRotationAngle = 0;
 
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
@@ -116,13 +124,11 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
     return ProgramID;
 }
 
-static void error_callback(int error, const char* description)
-{
+static void error_callback(int error, const char* description){
     fprintf(stderr, "Error: %s\n", description);
 }
 
-void quit(GLFWwindow *window)
-{
+void quit(GLFWwindow *window){
     glfwDestroyWindow(window);
     glfwTerminate();
     exit(EXIT_SUCCESS);
@@ -140,8 +146,7 @@ void initGLEW(void){
 
 
 /* Generate VAO, VBOs and return VAO handle */
-struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat* color_buffer_data, GLenum fill_mode=GL_FILL)
-{
+struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat* color_buffer_data, GLenum fill_mode=GL_FILL){
     struct VAO* vao = new struct VAO;
     vao->PrimitiveMode = primitive_mode;
     vao->NumVertices = numVertices;
@@ -180,8 +185,7 @@ struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloa
 }
 
 /* Generate VAO, VBOs and return VAO handle - Common Color for all vertices */
-struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat red, const GLfloat green, const GLfloat blue, GLenum fill_mode=GL_FILL)
-{
+struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat red, const GLfloat green, const GLfloat blue, GLenum fill_mode=GL_FILL){
     GLfloat* color_buffer_data = new GLfloat [3*numVertices];
     for (int i=0; i<numVertices; i++) {
         color_buffer_data [3*i] = red;
@@ -193,8 +197,7 @@ struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloa
 }
 
 /* Render the VBOs handled by VAO */
-void draw3DObject (struct VAO* vao)
-{
+void draw3DObject (struct VAO* vao){
     // Change the Fill Mode for this object
     glPolygonMode (GL_FRONT_AND_BACK, vao->FillMode);
 
@@ -222,10 +225,80 @@ void draw3DObject (struct VAO* vao)
 float rectangle_rot_dir = 1;
 bool rectangle_rot_status = true;
 
+void NewState(){
+  char action = state.rotDirection;
+  if(state.status==1){
+    switch(action) {
+      case 'R':
+        state.pos[0][0]=state.pos[0][0]+1;state.pos[0][1]=state.pos[0][1];
+        state.pos[1][0]=state.pos[0][0]+1;state.pos[1][1]=state.pos[0][1];
+        break;
+      case 'L':
+        state.pos[0][0]=state.pos[0][0]-2;state.pos[0][1]=state.pos[0][1];
+        state.pos[1][0]=state.pos[0][0]+1;state.pos[1][1]=state.pos[0][1];
+        break;
+      case 'B':
+        state.pos[0][0]=state.pos[0][0];state.pos[0][1]=state.pos[0][1]-2;
+        state.pos[1][0]=state.pos[0][0];state.pos[1][1]=state.pos[0][1]+1;
+        break;
+      case 'F':
+        state.pos[0][0]=state.pos[0][0];state.pos[0][1]=state.pos[0][1]+1;
+        state.pos[1][0]=state.pos[0][0];state.pos[1][1]=state.pos[0][1]+1;
+        break;
+    }
+  }
+  else if(state.pos[0][0]==state.pos[1][0]){
+    switch(action) {
+      case 'R':
+        state.pos[0][0]=state.pos[0][0]+1;state.pos[0][1]=state.pos[0][1];
+        state.pos[1][0]=state.pos[1][0]+1;state.pos[1][1]=state.pos[1][1];
+        break;
+      case 'L':
+        state.pos[0][0]=state.pos[0][0]-1;state.pos[0][1]=state.pos[0][1];
+        state.pos[1][0]=state.pos[1][0]-1;state.pos[1][1]=state.pos[1][1];
+        break;
+      case 'B':
+        state.pos[0][0]=state.pos[0][0];state.pos[0][1]=state.pos[0][1]-1;
+        state.pos[1][0]=-1;state.pos[1][1]=-1;
+        break;
+      case 'F':
+        state.pos[0][0]=state.pos[0][0];state.pos[0][1]=state.pos[0][1]+2;
+        state.pos[1][0]=-1;state.pos[1][1]=-1;
+        break;
+    }
+  }
+  else if(state.pos[0][1]==state.pos[1][1]){
+    switch(action) {
+      case 'R':
+        state.pos[0][0]=state.pos[0][0]+2;state.pos[0][1]=state.pos[0][1];
+        state.pos[1][0]=-1;state.pos[1][1]=-1;
+        break;
+      case 'L':
+        state.pos[0][0]=state.pos[0][0]-1;state.pos[0][1]=state.pos[0][1];
+        state.pos[1][0]=-1;state.pos[1][1]=-1;
+        break;
+      case 'B':
+        state.pos[0][0]=state.pos[0][0];state.pos[0][1]=state.pos[0][1]-1;
+        state.pos[1][0]=state.pos[1][0];state.pos[1][1]=state.pos[1][1]-1;
+        break;
+      case 'F':
+        state.pos[0][0]=state.pos[0][0];state.pos[0][1]=state.pos[0][1]+1;
+        state.pos[1][0]=state.pos[1][0];state.pos[1][1]=state.pos[1][1]+1;
+        break;
+    }
+  }
+  cout << "NewState" << endl;
+  cout << state.pos[0][0] << " " << state.pos[0][1] << " " << state.pos[1][0] << " " << state.pos[1][1] << " " << endl;
+  if(state.pos[1][0]==-1) state.status=1;
+  else  state.status=0;
+  cout << state.pos[1][0] << endl;
+  state.rotDirection = 'N';
+  cout << state.rotDirection << " rotdir " << state.status << endl;
+}
+
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
-void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
-{
+void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods){
     // Function is called first on GLFW_PRESS.
 
     if (action == GLFW_RELEASE) {
@@ -247,6 +320,18 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 	case GLFW_KEY_ESCAPE:
 	    quit(window);
 	    break;
+  case GLFW_KEY_UP:
+      state.rotDirection = 'F';
+      break;
+  case GLFW_KEY_DOWN:
+      state.rotDirection = 'B';
+      break;
+  case GLFW_KEY_RIGHT:
+      state.rotDirection = 'R';
+      break;
+  case GLFW_KEY_LEFT:
+      state.rotDirection = 'L';
+      break;
 	default:
 	    break;
         }
@@ -254,8 +339,7 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 }
 
 /* Executed for character input (like in text boxes) */
-void keyboardChar (GLFWwindow* window, unsigned int key)
-{
+void keyboardChar (GLFWwindow* window, unsigned int key){
     switch (key) {
     case 'Q':
     case 'q':
@@ -312,8 +396,7 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 }
 
 /* Executed when a mouse button is pressed/released */
-void mouseButton (GLFWwindow* window, int button, int action, int mods)
-{
+void mouseButton (GLFWwindow* window, int button, int action, int mods){
     switch (button) {
     case GLFW_MOUSE_BUTTON_RIGHT:
 	if (action == GLFW_RELEASE) {
@@ -328,8 +411,7 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
 
 /* Executed when window is resized to 'width' and 'height' */
 /* Modify the bounds of the screen here in glm::ortho or Field of View in glm::Perspective */
-void reshapeWindow (GLFWwindow* window, int width, int height)
-{
+void reshapeWindow (GLFWwindow* window, int width, int height){
     int fbwidth=width, fbheight=height;
     glfwGetFramebufferSize(window, &fbwidth, &fbheight);
 
@@ -343,12 +425,121 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     Matrices.projection = glm::perspective(fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
 }
 
-VAO *Tile, *Triangle;
+VAO *DTile, *Brick, *LTile;
+
+VAO* createCube(COLOR top,COLOR bottom,COLOR right,COLOR left,COLOR far,COLOR near,float width,float height,float depth){
+
+    float w=width/2,h=height/2,d=depth/2;
+    GLfloat vertex_buffer_data []={
+        -w,-h,-d,
+        -w,h,-d,
+        w,h,-d,
+
+        w,h,-d,
+        w,-h,-d,
+        -w,-h,-d,
+
+        -w,-h,d,
+        -w,h,d,
+        w,h,d,
+
+        w,h,d,
+        w,-h,d,
+        -w,-h,d,
+
+        -w,h,d,
+        -w,h,-d,
+        -w,-h,d,
+
+        -w,-h,d,
+        -w,-h,-d,
+        -w,h,-d,
+
+        w,h,d,
+        w,-h,d,
+        w,h,-d,
+
+        w,h,-d,
+        w,-h,-d,
+        w,-h,d,
+
+        -w,h,d,
+        -w,h,-d,
+        w,h,d,
+
+        w,h,d,
+        w,h,-d,
+        -w,h,-d,
+
+        -w,-h,d,
+        -w,-h,-d,
+        w,-h,d,
+
+        w,-h,d,
+        w,-h,-d,
+        -w,-h,-d
+    };
+
+
+    GLfloat color_buffer_data [] = {
+        far.r,far.g,far.b,
+        far.r,far.g,far.b,
+        far.r,far.g,far.b,
+
+        far.r,far.g,far.b,
+        far.r,far.g,far.b,
+        far.r,far.g,far.b,
+
+        near.r,near.g,near.b,
+        near.r,near.g,near.b,
+        near.r,near.g,near.b,
+
+        near.r,near.g,near.b,
+        near.r,near.g,near.b,
+        near.r,near.g,near.b,
+
+        left.r,left.g,left.b,
+        left.r,left.g,left.b,
+        left.r,left.g,left.b,
+
+        left.r,left.g,left.b,
+        left.r,left.g,left.b,
+        left.r,left.g,left.b,
+
+        right.r,right.g,right.b,
+        right.r,right.g,right.b,
+        right.r,right.g,right.b,
+
+        right.r,right.g,right.b,
+        right.r,right.g,right.b,
+        right.r,right.g,right.b,
+
+        top.r,top.g,top.b,
+        top.r,top.g,top.b,
+        top.r,top.g,top.b,
+
+        top.r,top.g,top.b,
+        top.r,top.g,top.b,
+        top.r,top.g,top.b,
+
+        bottom.r,bottom.g,bottom.b,
+        bottom.r,bottom.g,bottom.b,
+        bottom.r,bottom.g,bottom.b,
+
+        bottom.r,bottom.g,bottom.b,
+        bottom.r,bottom.g,bottom.b,
+        bottom.r,bottom.g,bottom.b
+    };
+
+    VAO *cube = create3DObject(GL_TRIANGLES,36,vertex_buffer_data,color_buffer_data,GL_FILL);
+    return cube;
+}
 
 // Creates the rectangle object used in this sample code
-void createTile (){
-    Tile = create3DObject(GL_TRIANGLES, 12*3, square_vertex, grey_color, GL_FILL);
-}
+/*void createTile (){
+    //Tile = create3DObject(GL_TRIANGLES, 12*3, square_vertex, grey_color, GL_FILL);
+    //Brick = create3DObject(GL_TRIANGLES, 12*3, square_vertex, red_color, GL_FILL);
+}*/
 
 
 float camera_rotation_angle = 90;
@@ -360,6 +551,114 @@ void render(VAO *object , glm::mat4 VP , float angle , float x , float y , float
   glm::mat4 rotateObject = glm::rotate((float)(angle*M_PI/180.0f), glm::vec3(0,0,1));  // rotate about vector (1,0,0)
   glm::mat4 scaleObject = glm::scale(glm::mat4(1.0f), glm::vec3(sx, sy, sz));
   glm::mat4 objectTransform =translateObject *  scaleObject *  rotateObject;
+  Matrices.model *= objectTransform;
+  glm::mat4 MVP = VP * Matrices.model; // MVP = p * V * M
+
+  glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
+
+  draw3DObject(object);
+}
+void renderBrick(VAO *object, glm::mat4 VP){
+  int i = state.pos[0][0], j = state.pos[0][1];
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 scaleObject;
+  if(state.status==1)
+    scaleObject = glm::scale(glm::mat4(1.0f), glm::vec3(10, 20, 10));
+  else if(state.pos[0][0]==state.pos[1][0])
+    scaleObject = glm::scale(glm::mat4(1.0f), glm::vec3(10, 10, 20));
+  else if(state.pos[0][1]==state.pos[1][1])
+    scaleObject = glm::scale(glm::mat4(1.0f), glm::vec3(20, 10, 10));
+  glm::mat4 trans1,trans2,rot1;
+  if(state.status==1){
+    switch(state.rotDirection){
+      case 'B':
+        trans1 = glm::translate (glm::vec3(0,10.0,5.0));
+        rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+        trans2 = glm::translate(glm::vec3(i*10-45, 0, j*10-50));
+        break;
+      case 'F':
+        trans1 = glm::translate (glm::vec3(0,10.0,-5.0));
+        rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+        trans2 = glm::translate(glm::vec3(i*10-45, 0, j*10-40));
+        break;
+      case 'L':
+        trans1 = glm::translate (glm::vec3(5.0,10.0,0));
+        rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+        trans2 = glm::translate(glm::vec3(i*10-50, 0, j*10-45));
+        break;
+      case 'R':
+        trans1 = glm::translate (glm::vec3(-5.0,10.0,0));
+        rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+        trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-45));
+        break;
+      default:
+        trans1 = glm::mat4(1.0f);
+        rot1 = glm::mat4(1.0f);
+        trans2 = glm:: translate(glm::vec3(i*10-45,10,j*10-45));
+        break;
+      }
+  }
+if(state.pos[0][0]==state.pos[1][0]){
+  //cout << state.rotDirection << endl;
+  switch(state.rotDirection){
+    case 'F':
+      trans1 = glm::translate (glm::vec3(0,5.0,-10.0));
+      rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+      trans2 = glm::translate(glm::vec3(i*10-45, 0, j*10-30));
+      break;
+    case 'B':
+      trans1 = glm::translate (glm::vec3(0,5.0,10.0));
+      rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+      trans2 = glm::translate(glm::vec3(i*10-45, 0, j*10-50));
+      break;
+    case 'R':
+      trans1 = glm::translate (glm::vec3(-5.0,5.0,0));
+      rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+      trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-40));
+      break;
+    case 'L':
+      trans1 = glm::translate (glm::vec3(5.0,5.0,0));
+      rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+      trans2 = glm::translate(glm::vec3(i*10-50, 0, j*10-40));
+      break;
+    default:
+      trans1 = glm::mat4(1.0f);
+      rot1 = glm::mat4(1.0f);
+      trans2 = glm:: translate(glm::vec3(i*10-45,5,j*10-40));
+      break;
+    }
+}
+if(state.pos[0][1]==state.pos[1][1]){
+  switch(state.rotDirection){
+    case 'F':
+      trans1 = glm::translate (glm::vec3(0,5.0,-5.0));
+      rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+      trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-40));
+      break;
+    case 'B':
+      trans1 = glm::translate (glm::vec3(0,5.0,5.0));
+      rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+      trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-50));
+      break;
+    case 'R':
+      trans1 = glm::translate (glm::vec3(-10.0,5.0,0));
+      rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+      trans2 = glm::translate(glm::vec3(i*10-30, 0, j*10-45));
+      break;
+    case 'L':
+      trans1 = glm::translate (glm::vec3(10.0,5.0,0));
+      rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+      trans2 = glm::translate(glm::vec3(i*10-50, 0, j*10-45));
+      break;
+    default:
+      trans1 = glm::mat4(1.0f);
+      rot1 = glm::mat4(1.0f);
+      trans2 = glm:: translate(glm::vec3(i*10-40,5,j*10-45));
+      break;
+    }
+}
+
+  glm::mat4 objectTransform = trans2 * rot1 * trans1 * scaleObject;
   Matrices.model *= objectTransform;
   glm::mat4 MVP = VP * Matrices.model; // MVP = p * V * M
 
@@ -381,6 +680,7 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 
     // Eye - Location of camera. Don't change unless you are sure!!
     glm::vec3 eye ( 100*cos(camera_rotation_angle*M_PI/180.0f), 100, 100*sin(camera_rotation_angle*M_PI/180.0f) );
+    //glm::vec3 eye (0,300,0);
     // Target - Where is the camera looking at.  Don't change unless you are sure!!
     glm::vec3 target (0, 0, 0);
     // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
@@ -395,10 +695,20 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
 	VP = Matrices.projection * Matrices.view;
 
   for ( int i=0; i<fsizex; i++)
-    for (int j=0; j<fsizey; j++)
-      if (GameMap[i][j]==0)
-        render(Tile, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 9.0f, 2.0f, 9.0f);
-  //render(Triangle, VP, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
+    for (int j=0; j<fsizey; j++){
+      if ((i+j)%2==0)
+        render(DTile, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 10.0f, 2.0f, 10.0f);
+      else
+        render(LTile, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 10.0f, 2.0f, 10.0f);
+}
+  renderBrick(Brick, VP);
+  if(state.rotDirection!='N'){
+    blockRotationAngle += 2.0;
+    if(blockRotationAngle>=90){
+      NewState();
+      blockRotationAngle = 0;
+    }
+  }
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -441,20 +751,9 @@ GLFWwindow* initGLFW (int width, int height){
 void initGL (GLFWwindow* window, int width, int height){
     /* Objects should be created before any other gl function and shaders */
     // Create the models
-    createTile ();
-static const GLfloat vertex [] = {
-    -2.0, 2.0, 2.0,
-    -2.0, -2.0, 2.0,
-    2.0, -2.0, 2.0,
-};
-static const GLfloat color [] = {
-1.0, 0.0, 0.0,
-1.0, 0.0, 0.0,
-1.0, 0.0, 0.0,
-};
-
-    Triangle = create3DObject(GL_TRIANGLES, 3, vertex, color, GL_FILL);
-
+    DTile = createCube(blue, blue, blue, blue, blue, blue, 1.0, 1.0, 1.0);
+    LTile = createCube(skyblue, skyblue, skyblue, skyblue, skyblue, skyblue, 1.0, 1.0, 1.0);
+    Brick = createCube(orange, orange, orange, orange, orange, orange, 1.0, 1.0, 1.0);
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
     // Get a handle for our "MVP" uniform
@@ -471,8 +770,11 @@ static const GLfloat color [] = {
     glDepthFunc (GL_LEQUAL);
 }
 
-int main (int argc, char** argv)
-{
+int main (int argc, char** argv){
+    state.pos[0][0]=5;state.pos[0][1]=5;
+    state.pos[1][0]=-1;state.pos[1][1]=-1;
+    state.status=1;
+    state.rotDirection='N';
     int width = 600;
     int height = 600;
     rect_pos = glm::vec3(0, 0, 0);
