@@ -111,6 +111,58 @@ void audio_close() {
 }
 
 
+mpg123_handle *mh1;
+unsigned char *buffer1;
+size_t buffe1_size;
+size_t done1;
+int err1;
+
+int driver1;
+ao_device *dev1;
+
+ao_sample_format format1;
+int channels1, encoding1;
+long rate1;
+
+void audio1_init() {
+    /* initializations */
+    ao_initialize();
+    driver1 = ao_default_driver_id();
+    mpg123_init();
+    mh1 = mpg123_new(NULL, &err1);
+    buffe1_size = 3000;
+    buffer1 = (unsigned char*) malloc(buffe1_size * sizeof(unsigned char));
+
+    /* open the file and get the decoding format1 */
+    mpg123_open(mh1, "./sound.mp3");
+    mpg123_getformat(mh1, &rate1, &channels1, &encoding1);
+
+    /* set the output format1 and open the output dev1ice */
+    format1.bits = mpg123_encsize(encoding1) * BITS;
+    format1.rate = rate1;
+    format1.channels = channels1;
+    format1.byte_format = AO_FMT_NATIVE;
+    format1.matrix = 0;
+    dev1 = ao_open_live(driver1, &format1, NULL);
+}
+
+void audio1_play() {
+    /* decode and play */
+    if (mpg123_read(mh1, buffer1, buffe1_size, &done1) == MPG123_OK)
+        ao_play(dev1, (char*) buffer1, done1);
+    else mpg123_seek(mh1, 0, SEEK_SET);
+}
+
+void audio1_close() {
+    /* clean up */
+    free(buffer1);
+    ao_close(dev1);
+    mpg123_close(mh1);
+    mpg123_delete(mh1);
+    mpg123_exit();
+    ao_shutdown();
+}
+
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
 
@@ -217,7 +269,7 @@ struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloa
     vao->FillMode = fill_mode;
 
     // Create Vertex Array Object
-    // Should be done after CreateWindow and before any other GL calls
+    // Should be done1 after CreateWindow and before any other GL calls
     glGenVertexArrays(1, &(vao->VertexArrayID)); // VAO
     glGenBuffers (1, &(vao->VertexBuffer)); // VBO - vertices
     glGenBuffers (1, &(vao->ColorBuffer));  // VBO - colors
@@ -443,18 +495,22 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods){
   case GLFW_KEY_UP:
       if(falling!=1)
         state.rotDirection = 'B';
+        audio1_init();
       break;
   case GLFW_KEY_DOWN:
       if(falling!=1)
         state.rotDirection = 'F';
+        audio1_init();
       break;
   case GLFW_KEY_RIGHT:
       if(falling!=1)
         state.rotDirection = 'R';
+        audio1_init();
       break;
   case GLFW_KEY_LEFT:
       if(falling!=1)
         state.rotDirection = 'L';
+        audio1_init();
       break;
 	default:
 	    break;
@@ -928,8 +984,9 @@ int main (int argc, char** argv){
 	    camera_rotation_angle -= 720;
 	last_update_time = current_time;
 	draw(window, 0, 0, 1, 1, 1, 1, 1);
+  audio_play();
       if(state.rotDirection!='N')
-        audio_play();
+        audio1_play();
   CheckFall();
   CheckSwitch();
   GoalTest();
