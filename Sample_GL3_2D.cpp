@@ -12,6 +12,10 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "myconstants.h"
+#include <ao/ao.h>
+#include <mpg123.h>
+
+#define BITS 8
 
 using namespace std;
 
@@ -46,6 +50,66 @@ float rectangle_rotation = 0;
 BrickState state;
 bool Inrotation=1;
 float blockRotationAngle = 0;
+float FALLDOWN = 0;
+int falling = 0,UpgradeLevel=0,level=1,campointer=0;
+int a=10,b=0,sidepointer=0;
+int goalx[3]={0,3,4}, initx[3]={0,9,0};
+int goalz[3]={0,1,7}, initz[3]={0,9,2};
+
+
+
+mpg123_handle *mh;
+unsigned char *buffer;
+size_t buffer_size;
+size_t done;
+int err;
+
+int driver;
+ao_device *dev;
+
+ao_sample_format format;
+int channels, encoding;
+long rate;
+
+void audio_init() {
+    /* initializations */
+    ao_initialize();
+    driver = ao_default_driver_id();
+    mpg123_init();
+    mh = mpg123_new(NULL, &err);
+    buffer_size = 3000;
+    buffer = (unsigned char*) malloc(buffer_size * sizeof(unsigned char));
+
+    /* open the file and get the decoding format */
+    mpg123_open(mh, "./music.mp3");
+    mpg123_getformat(mh, &rate, &channels, &encoding);
+
+    /* set the output format and open the output device */
+    format.bits = mpg123_encsize(encoding) * BITS;
+    format.rate = rate;
+    format.channels = channels;
+    format.byte_format = AO_FMT_NATIVE;
+    format.matrix = 0;
+    dev = ao_open_live(driver, &format, NULL);
+}
+
+void audio_play() {
+    /* decode and play */
+    if (mpg123_read(mh, buffer, buffer_size, &done) == MPG123_OK)
+        ao_play(dev, (char*) buffer, done);
+    else mpg123_seek(mh, 0, SEEK_SET);
+}
+
+void audio_close() {
+    /* clean up */
+    free(buffer);
+    ao_close(dev);
+    mpg123_close(mh);
+    mpg123_delete(mh);
+    mpg123_exit();
+    ao_shutdown();
+}
+
 
 /* Function to load Shaders - Use it as it is */
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path) {
@@ -225,6 +289,49 @@ void draw3DObject (struct VAO* vao){
 float rectangle_rot_dir = 1;
 bool rectangle_rot_status = true;
 
+void InitialiseGlobalVars(){
+  Inrotation=1; blockRotationAngle = 0; FALLDOWN = 0; falling = 0;  UpgradeLevel=0;
+  state.status=1; state.rotDirection='N';
+  state.pos[0][0]=initx[level];state.pos[0][1]=initz[level];
+  state.pos[1][0]=-1;state.pos[1][1]=-1;
+}
+void CheckFragile() {
+  if(state.status==1){
+    if(GameMap[level-1][state.pos[0][0]][state.pos[0][1]]==5)
+      GameMap[level-1][state.pos[0][0]][state.pos[0][1]]=0;
+    }
+}
+void CheckSwitch(){
+  if((GameMap[level-1][state.pos[0][0]][state.pos[0][1]]==3)||(GameMap[level-1][state.pos[1][0]][state.pos[1][1]]==3)){
+    for (int a=0; a<10; a++)
+      for (int b=0; b<10; b++)
+        if(GameMap[level-1][a][b]==2)
+          GameMap[level-1][a][b]=1;
+  }
+}
+void CheckFall(){
+  if((state.pos[0][0]<0) || (state.pos[0][0]>9) || (state.pos[0][1]<0) || (state.pos[0][1]>9)){
+    falling=1;
+  }
+  else if((state.pos[1][0]<0) || (state.pos[1][0]>9) || (state.pos[1][1]<0) || (state.pos[1][1]>9)){
+    if(state.status==0)
+      falling=1;
+  }
+  if(state.status==1){
+    if((GameMap[level-1][state.pos[0][0]][state.pos[0][1]]==0)||(GameMap[level-1][state.pos[0][0]][state.pos[0][1]]==2))
+      falling=1;
+    }
+  else{
+    if((GameMap[level-1][state.pos[0][0]][state.pos[0][1]]==0)||(GameMap[level-1][state.pos[1][0]][state.pos[1][1]]==0)||(GameMap[level-1][state.pos[0][0]][state.pos[0][1]]==2)||(GameMap[level-1][state.pos[1][0]][state.pos[1][1]]==2))
+      falling=1;
+  }
+}
+void GoalTest(){
+  if(state.status==1 && state.pos[0][0]==goalx[level] && state.pos[0][1]==goalz[level]){
+    falling =1;
+    UpgradeLevel=1;
+  }
+}
 void NewState(){
   char action = state.rotDirection;
   if(state.status==1){
@@ -295,7 +402,20 @@ void NewState(){
   state.rotDirection = 'N';
   cout << state.rotDirection << " rotdir " << state.status << endl;
 }
-
+void changeSide() {
+  if(sidepointer==0){
+    a=10;b=0;
+  }
+  else if (sidepointer==1){
+    a=0;b=10;
+  }
+  else if (sidepointer==2){
+    a=-10;b=0;
+  }
+  else{
+    a=0;b=-10;
+  }
+}
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods){
@@ -321,16 +441,20 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods){
 	    quit(window);
 	    break;
   case GLFW_KEY_UP:
-      state.rotDirection = 'F';
+      if(falling!=1)
+        state.rotDirection = 'B';
       break;
   case GLFW_KEY_DOWN:
-      state.rotDirection = 'B';
+      if(falling!=1)
+        state.rotDirection = 'F';
       break;
   case GLFW_KEY_RIGHT:
-      state.rotDirection = 'R';
+      if(falling!=1)
+        state.rotDirection = 'R';
       break;
   case GLFW_KEY_LEFT:
-      state.rotDirection = 'L';
+      if(falling!=1)
+        state.rotDirection = 'L';
       break;
 	default:
 	    break;
@@ -343,55 +467,20 @@ void keyboardChar (GLFWwindow* window, unsigned int key){
     switch (key) {
     case 'Q':
     case 'q':
-	quit(window);
-	break;
-    case 'a':
-	rect_pos.x -= 0.1;
-	break;
-    case 'd':
-	rect_pos.x += 0.1;
-	break;
-    case 'w':
-	rect_pos.y += 0.1;
-	break;
-    case 's':
-	rect_pos.y -= 0.1;
-	break;
-    case 'r':
-	rect_pos.z -= 0.1;
-	break;
-    case 'f':
-	rect_pos.z += 0.1;
-	break;
-    case 'e':
-	rectangle_rotation += 1;
-	break;
-    case 'j':
-	floor_pos.x -= 0.1;
-	break;
-    case 'l':
-	floor_pos.x += 0.1;
-	break;
-    case 'i':
-	floor_pos.y += 0.1;
-	break;
-    case 'k':
-	floor_pos.y -= 0.1;
-	break;
-    case 'y':
-	floor_pos.z -= 0.1;
-	break;
-    case 'h':
-	floor_pos.z += 0.1;
-	break;
-    case 'g':
-	floor_rel ^= 1;
-	break;
+    	quit(window);
+    	break;
     case ' ':
-	do_rot ^= 1;
-	break;
+  	 do_rot ^= 1;
+  	  break;
+    case 'c':
+      campointer = (campointer+1)%4;
+      break;
+    case 's':
+      sidepointer = (sidepointer+1)%4;
+      changeSide();
+      break;
     default:
-	break;
+	   break;
     }
 }
 
@@ -425,7 +514,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height){
     Matrices.projection = glm::perspective(fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
 }
 
-VAO *DTile, *Brick, *LTile;
+VAO *DTile, *Brick, *LTile, *Switch, *FragileTile, *FragileTile2;
 
 VAO* createCube(COLOR top,COLOR bottom,COLOR right,COLOR left,COLOR far,COLOR near,float width,float height,float depth){
 
@@ -535,13 +624,6 @@ VAO* createCube(COLOR top,COLOR bottom,COLOR right,COLOR left,COLOR far,COLOR ne
     return cube;
 }
 
-// Creates the rectangle object used in this sample code
-/*void createTile (){
-    //Tile = create3DObject(GL_TRIANGLES, 12*3, square_vertex, grey_color, GL_FILL);
-    //Brick = create3DObject(GL_TRIANGLES, 12*3, square_vertex, red_color, GL_FILL);
-}*/
-
-
 float camera_rotation_angle = 90;
 
 /* Render the object with openGL */
@@ -594,69 +676,69 @@ void renderBrick(VAO *object, glm::mat4 VP){
       default:
         trans1 = glm::mat4(1.0f);
         rot1 = glm::mat4(1.0f);
-        trans2 = glm:: translate(glm::vec3(i*10-45,10,j*10-45));
+        trans2 = glm:: translate(glm::vec3(i*10-45,10-FALLDOWN,j*10-45));
         break;
       }
   }
-if(state.pos[0][0]==state.pos[1][0]){
-  //cout << state.rotDirection << endl;
-  switch(state.rotDirection){
-    case 'F':
-      trans1 = glm::translate (glm::vec3(0,5.0,-10.0));
-      rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
-      trans2 = glm::translate(glm::vec3(i*10-45, 0, j*10-30));
-      break;
-    case 'B':
-      trans1 = glm::translate (glm::vec3(0,5.0,10.0));
-      rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
-      trans2 = glm::translate(glm::vec3(i*10-45, 0, j*10-50));
-      break;
-    case 'R':
-      trans1 = glm::translate (glm::vec3(-5.0,5.0,0));
-      rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
-      trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-40));
-      break;
-    case 'L':
-      trans1 = glm::translate (glm::vec3(5.0,5.0,0));
-      rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
-      trans2 = glm::translate(glm::vec3(i*10-50, 0, j*10-40));
-      break;
-    default:
-      trans1 = glm::mat4(1.0f);
-      rot1 = glm::mat4(1.0f);
-      trans2 = glm:: translate(glm::vec3(i*10-45,5,j*10-40));
-      break;
-    }
-}
-if(state.pos[0][1]==state.pos[1][1]){
-  switch(state.rotDirection){
-    case 'F':
-      trans1 = glm::translate (glm::vec3(0,5.0,-5.0));
-      rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
-      trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-40));
-      break;
-    case 'B':
-      trans1 = glm::translate (glm::vec3(0,5.0,5.0));
-      rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
-      trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-50));
-      break;
-    case 'R':
-      trans1 = glm::translate (glm::vec3(-10.0,5.0,0));
-      rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
-      trans2 = glm::translate(glm::vec3(i*10-30, 0, j*10-45));
-      break;
-    case 'L':
-      trans1 = glm::translate (glm::vec3(10.0,5.0,0));
-      rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
-      trans2 = glm::translate(glm::vec3(i*10-50, 0, j*10-45));
-      break;
-    default:
-      trans1 = glm::mat4(1.0f);
-      rot1 = glm::mat4(1.0f);
-      trans2 = glm:: translate(glm::vec3(i*10-40,5,j*10-45));
-      break;
-    }
-}
+  if(state.pos[0][0]==state.pos[1][0]){
+    //cout << state.rotDirection << endl;
+    switch(state.rotDirection){
+      case 'F':
+        trans1 = glm::translate (glm::vec3(0,5.0,-10.0));
+        rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+        trans2 = glm::translate(glm::vec3(i*10-45, 0, j*10-30));
+        break;
+      case 'B':
+        trans1 = glm::translate (glm::vec3(0,5.0,10.0));
+        rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+        trans2 = glm::translate(glm::vec3(i*10-45, 0, j*10-50));
+        break;
+      case 'R':
+        trans1 = glm::translate (glm::vec3(-5.0,5.0,0));
+        rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+        trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-40));
+        break;
+      case 'L':
+        trans1 = glm::translate (glm::vec3(5.0,5.0,0));
+        rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+        trans2 = glm::translate(glm::vec3(i*10-50, 0, j*10-40));
+        break;
+      default:
+        trans1 = glm::mat4(1.0f);
+        rot1 = glm::mat4(1.0f);
+        trans2 = glm:: translate(glm::vec3(i*10-45,5-FALLDOWN,j*10-40));
+        break;
+      }
+  }
+  if(state.pos[0][1]==state.pos[1][1]){
+    switch(state.rotDirection){
+      case 'F':
+        trans1 = glm::translate (glm::vec3(0,5.0,-5.0));
+        rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+        trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-40));
+        break;
+      case 'B':
+        trans1 = glm::translate (glm::vec3(0,5.0,5.0));
+        rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(1,0,0));
+        trans2 = glm::translate(glm::vec3(i*10-40, 0, j*10-50));
+        break;
+      case 'R':
+        trans1 = glm::translate (glm::vec3(-10.0,5.0,0));
+        rot1 = glm::rotate(float(-1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+        trans2 = glm::translate(glm::vec3(i*10-30, 0, j*10-45));
+        break;
+      case 'L':
+        trans1 = glm::translate (glm::vec3(10.0,5.0,0));
+        rot1 = glm::rotate(float(1*(blockRotationAngle*M_PI/180.0f)), glm::vec3(0,0,1));
+        trans2 = glm::translate(glm::vec3(i*10-50, 0, j*10-45));
+        break;
+      default:
+        trans1 = glm::mat4(1.0f);
+        rot1 = glm::mat4(1.0f);
+        trans2 = glm:: translate(glm::vec3(i*10-40,5-FALLDOWN,j*10-45));
+        break;
+      }
+  }
 
   glm::mat4 objectTransform = trans2 * rot1 * trans1 * scaleObject;
   Matrices.model *= objectTransform;
@@ -677,38 +759,81 @@ void draw (GLFWwindow* window, float x, float y, float w, float h, int doM, int 
     // use the loaded shader program
     // Don't change unless you know what you are doing
     glUseProgram(programID);
+    //glm::vec3 eye, target, up;
+    float cx=state.pos[0][0],cz=state.pos[0][1],tx=goalx[level]-cx,tz=goalz[level]-cz;
+    cx=cx*10-50;cz=cz*10-50;
 
-    // Eye - Location of camera. Don't change unless you are sure!!
-    glm::vec3 eye ( 100*cos(camera_rotation_angle*M_PI/180.0f), 100, 100*sin(camera_rotation_angle*M_PI/180.0f) );
-    //glm::vec3 eye (0,300,0);
-    // Target - Where is the camera looking at.  Don't change unless you are sure!!
-    glm::vec3 target (0, 0, 0);
-    // Up - Up vector defines tilt of camera.  Don't change unless you are sure!!
-    glm::vec3 up (0, 1, 0);
+    if(campointer==0){
+      glm::vec3 eye ( 100*cos(camera_rotation_angle*M_PI/180.0f), 100, 100*sin(camera_rotation_angle*M_PI/180.0f) );
+      glm::vec3 target (0, 0, 0);
+      glm::vec3 up (0, 1, 0);
+      Matrices.view = glm::lookAt(eye, target, up);
+    }
+    else if(campointer==1){
+      glm::vec3 eye ( 0, 100, 0);
+      glm::vec3 target (0, 0, 0);
+      glm::vec3 up (0, 0, -1);
+      Matrices.view = glm::lookAt(eye, target, up);
+    }
+    else if(campointer==2){
+      glm::vec3 eye ( cx, 30, cz);
+      glm::vec3 target (cx+a, 30, cz+b);
+      glm::vec3 up (0, 1, 0);
+      Matrices.view = glm::lookAt(eye, target, up);
+    }
+    else if (campointer==3){
+      glm::vec3 eye ( cx-5*a, 30, cz-5*b);
+      glm::vec3 target (cx+5*a, 30, cz+5*b);
+      glm::vec3 up (0, 1, 0);
+      Matrices.view = glm::lookAt(eye, target, up);
+    }
 
     // Compute Camera matrix (view)
-	Matrices.view = glm::lookAt(eye, target, up); // Fixed camera for 2D (ortho) in XY plane
+	   // Fixed camera for 2D (ortho) in XY plane
 
     // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
     glm::mat4 VP;
 
-	VP = Matrices.projection * Matrices.view;
+	  VP = Matrices.projection * Matrices.view;
 
-  for ( int i=0; i<fsizex; i++)
-    for (int j=0; j<fsizey; j++){
-      if ((i+j)%2==0)
-        render(DTile, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 10.0f, 2.0f, 10.0f);
-      else
-        render(LTile, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 10.0f, 2.0f, 10.0f);
-}
-  renderBrick(Brick, VP);
-  if(state.rotDirection!='N'){
-    blockRotationAngle += 2.0;
-    if(blockRotationAngle>=90){
-      NewState();
-      blockRotationAngle = 0;
-    }
+    for ( int i=0; i<fsizex; i++)
+      for (int j=0; j<fsizey; j++){
+        if(GameMap[level-1][i][j]==3)
+          render(Switch, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 10.0f, 2.0f, 10.0f);
+        if(GameMap[level-1][i][j]==5){
+          if((i+j)%2==0)
+            render(FragileTile2, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 10.0f, 2.0f, 10.0f);
+          else
+            render(FragileTile, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 10.0f, 2.0f, 10.0f);
+        }
+        if(GameMap[level-1][i][j]==1){
+          if ((i+j)%2==0)
+            render(DTile, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 10.0f, 2.0f, 10.0f);
+          else
+            render(LTile, VP, 0.0f, (((float)i-5.0)*10.0+5.0), -1.0f, (((float)j-5.0)*10.0+5.0), 10.0f, 2.0f, 10.0f);
+        }
   }
+    if(falling) {
+      FALLDOWN += 1;
+      if(FALLDOWN==200){
+        if(UpgradeLevel==1){
+          level+=1;
+          if(level==3)
+            quit(window);
+          InitialiseGlobalVars();
+        }
+        else
+          quit(window);
+      }
+    }
+    renderBrick(Brick, VP);
+    if(state.rotDirection!='N'){
+      blockRotationAngle += 3.0;
+      if(blockRotationAngle>=90){
+        NewState();
+        blockRotationAngle = 0;
+      }
+    }
 }
 
 /* Initialise glfw window, I/O callbacks and the renderer to use */
@@ -753,7 +878,10 @@ void initGL (GLFWwindow* window, int width, int height){
     // Create the models
     DTile = createCube(blue, blue, blue, blue, blue, blue, 1.0, 1.0, 1.0);
     LTile = createCube(skyblue, skyblue, skyblue, skyblue, skyblue, skyblue, 1.0, 1.0, 1.0);
-    Brick = createCube(orange, orange, orange, orange, orange, orange, 1.0, 1.0, 1.0);
+    Brick = createCube(yellow, yellow, yellow, yellow, yellow, yellow, 1.0, 1.0, 1.0);
+    Switch = createCube(green2, green2, green2, green2, green2, green2, 1.0, 1.0, 1.0);
+    FragileTile = createCube(red, red, red, red, red, red, 1.0, 1.0, 1.0);
+    FragileTile2 = createCube(orange, orange, orange, orange, orange, orange, 1.0, 1.0, 1.0);
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
     // Get a handle for our "MVP" uniform
@@ -771,17 +899,15 @@ void initGL (GLFWwindow* window, int width, int height){
 }
 
 int main (int argc, char** argv){
-    state.pos[0][0]=5;state.pos[0][1]=5;
-    state.pos[1][0]=-1;state.pos[1][1]=-1;
-    state.status=1;
-    state.rotDirection='N';
+
+    InitialiseGlobalVars();
     int width = 600;
     int height = 600;
     rect_pos = glm::vec3(0, 0, 0);
     floor_pos = glm::vec3(0, 0, 0);
     do_rot = 0;
     floor_rel = 1;
-    cout << GameMap[0][0] << endl;
+    audio_init();
 
     GLFWwindow* window = initGLFW(width, height);
     initGLEW();
@@ -802,12 +928,21 @@ int main (int argc, char** argv){
 	    camera_rotation_angle -= 720;
 	last_update_time = current_time;
 	draw(window, 0, 0, 1, 1, 1, 1, 1);
+      if(state.rotDirection!='N')
+        audio_play();
+  CheckFall();
+  CheckSwitch();
+  GoalTest();
+  CheckFragile();
+  if(falling)
+    cout << "falling " << FALLDOWN << endl;
         // Swap Frame Buffer in double buffering
         glfwSwapBuffers(window);
 
         // Poll for Keyboard and mouse events
         glfwPollEvents();
     }
+    audio_close();
 
     glfwTerminate();
     //    exit(EXIT_SUCCESS);

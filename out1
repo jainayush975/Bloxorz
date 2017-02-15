@@ -1,0 +1,512 @@
+NewState
+1 2 2 2 
+2
+N rotdir 0
+NewState
+0 2 -1 -1 
+-1
+N rotdir 1
+NewState
+1 2 2 2 
+2
+N rotdir 0
+NewState
+3 2 -1 -1 
+-1
+N rotdir 1
+NewState
+1 2 2 2 
+2
+N rotdir 0
+NewState
+1 3 2 3 
+2
+N rotdir 0
+NewState
+1 4 2 4 
+2
+N rotdir 0
+NewState
+1 5 2 5 
+2
+N rotdir 0
+NewState
+3 5 -1 -1 
+-1
+N rotdir 1
+NewState
+3 6 3 7 
+3
+N rotdir 0
+NewState
+4 6 4 7 
+4
+N rotdir 0
+NewState
+4 8 -1 -1 
+-1
+N rotdir 1
+NewState
+2 8 3 8 
+3
+N rotdir 0
+NewState
+2 7 3 7 
+3
+N rotdir 0
+NewState
+4 7 -1 -1 
+-1
+N rotdir 1
+falling 0
+falling 1
+falling 2
+falling 3
+falling 4
+falling 5
+falling 6
+falling 7
+falling 8
+falling 9
+falling 10
+falling 11
+falling 12
+falling 13
+falling 14
+falling 15
+falling 16
+falling 17
+falling 18
+falling 19
+falling 20
+falling 21
+falling 22
+falling 23
+falling 24
+falling 25
+falling 26
+falling 27
+falling 28
+falling 29
+falling 30
+falling 31
+falling 32
+falling 33
+falling 34
+falling 35
+falling 36
+falling 37
+falling 38
+falling 39
+falling 40
+falling 41
+falling 42
+falling 43
+falling 44
+falling 45
+falling 46
+falling 47
+falling 48
+falling 49
+falling 50
+falling 51
+falling 52
+falling 53
+falling 54
+falling 55
+falling 56
+falling 57
+falling 58
+falling 59
+falling 60
+falling 61
+falling 62
+falling 63
+falling 64
+falling 65
+falling 66
+falling 67
+falling 68
+falling 69
+falling 70
+falling 71
+falling 72
+falling 73
+falling 74
+falling 75
+falling 76
+falling 77
+falling 78
+falling 79
+falling 80
+falling 81
+falling 82
+falling 83
+falling 84
+falling 85
+falling 86
+falling 87
+falling 88
+falling 89
+falling 90
+falling 91
+falling 92
+falling 93
+falling 94
+falling 95
+falling 96
+falling 97
+falling 98
+falling 99
+falling 100
+falling 101
+falling 102
+falling 103
+falling 104
+falling 105
+falling 106
+falling 107
+falling 108
+falling 109
+falling 110
+falling 111
+falling 112
+falling 113
+falling 114
+falling 115
+falling 116
+falling 117
+falling 118
+falling 119
+falling 120
+falling 121
+falling 122
+falling 123
+falling 124
+falling 125
+falling 126
+falling 127
+falling 128
+falling 129
+falling 130
+falling 131
+falling 132
+falling 133
+falling 134
+falling 135
+falling 136
+falling 137
+falling 138
+falling 139
+falling 140
+falling 141
+falling 142
+falling 143
+falling 144
+falling 145
+falling 146
+falling 147
+falling 148
+falling 149
+falling 150
+falling 151
+falling 152
+falling 153
+falling 154
+falling 155
+falling 156
+falling 157
+falling 158
+falling 159
+falling 160
+falling 161
+falling 162
+falling 163
+falling 164
+falling 165
+falling 166
+falling 167
+falling 168
+falling 169
+falling 170
+falling 171
+falling 172
+falling 173
+falling 174
+falling 175
+falling 176
+falling 177
+falling 178
+falling 179
+falling 180
+falling 181
+falling 182
+falling 183
+falling 184
+falling 185
+falling 186
+falling 187
+falling 188
+falling 189
+falling 190
+falling 191
+falling 192
+falling 193
+falling 194
+falling 195
+falling 196
+falling 197
+falling 198
+falling 199
+NewState
+1 2 2 2 
+2
+N rotdir 0
+NewState
+3 2 -1 -1 
+-1
+N rotdir 1
+NewState
+1 2 2 2 
+2
+N rotdir 0
+NewState
+1 3 2 3 
+2
+N rotdir 0
+NewState
+1 4 2 4 
+2
+N rotdir 0
+NewState
+1 5 2 5 
+2
+N rotdir 0
+NewState
+3 5 -1 -1 
+-1
+N rotdir 1
+NewState
+3 6 3 7 
+3
+N rotdir 0
+NewState
+4 6 4 7 
+4
+N rotdir 0
+NewState
+4 8 -1 -1 
+-1
+N rotdir 1
+NewState
+2 8 3 8 
+3
+N rotdir 0
+NewState
+2 7 3 7 
+3
+N rotdir 0
+NewState
+4 7 -1 -1 
+-1
+N rotdir 1
+falling 0
+falling 1
+falling 2
+falling 3
+falling 4
+falling 5
+falling 6
+falling 7
+falling 8
+falling 9
+falling 10
+falling 11
+falling 12
+falling 13
+falling 14
+falling 15
+falling 16
+falling 17
+falling 18
+falling 19
+falling 20
+falling 21
+falling 22
+falling 23
+falling 24
+falling 25
+falling 26
+falling 27
+falling 28
+falling 29
+falling 30
+falling 31
+falling 32
+falling 33
+falling 34
+falling 35
+falling 36
+falling 37
+falling 38
+falling 39
+falling 40
+falling 41
+falling 42
+falling 43
+falling 44
+falling 45
+falling 46
+falling 47
+falling 48
+falling 49
+falling 50
+falling 51
+falling 52
+falling 53
+falling 54
+falling 55
+falling 56
+falling 57
+falling 58
+falling 59
+falling 60
+falling 61
+falling 62
+falling 63
+falling 64
+falling 65
+falling 66
+falling 67
+falling 68
+falling 69
+falling 70
+falling 71
+falling 72
+falling 73
+falling 74
+falling 75
+falling 76
+falling 77
+falling 78
+falling 79
+falling 80
+falling 81
+falling 82
+falling 83
+falling 84
+falling 85
+falling 86
+falling 87
+falling 88
+falling 89
+falling 90
+falling 91
+falling 92
+falling 93
+falling 94
+falling 95
+falling 96
+falling 97
+falling 98
+falling 99
+falling 100
+falling 101
+falling 102
+falling 103
+falling 104
+falling 105
+falling 106
+falling 107
+falling 108
+falling 109
+falling 110
+falling 111
+falling 112
+falling 113
+falling 114
+falling 115
+falling 116
+falling 117
+falling 118
+falling 119
+falling 120
+falling 121
+falling 122
+falling 123
+falling 124
+falling 125
+falling 126
+falling 127
+falling 128
+falling 129
+falling 130
+falling 131
+falling 132
+falling 133
+falling 134
+falling 135
+falling 136
+falling 137
+falling 138
+falling 139
+falling 140
+falling 141
+falling 142
+falling 143
+falling 144
+falling 145
+falling 146
+falling 147
+falling 148
+falling 149
+falling 150
+falling 151
+falling 152
+falling 153
+falling 154
+falling 155
+falling 156
+falling 157
+falling 158
+falling 159
+falling 160
+falling 161
+falling 162
+falling 163
+falling 164
+falling 165
+falling 166
+falling 167
+falling 168
+falling 169
+falling 170
+falling 171
+falling 172
+falling 173
+falling 174
+falling 175
+falling 176
+falling 177
+falling 178
+falling 179
+falling 180
+falling 181
+falling 182
+falling 183
+falling 184
+falling 185
+falling 186
+falling 187
+falling 188
+falling 189
+falling 190
+falling 191
+falling 192
+falling 193
+falling 194
+falling 195
+falling 196
+falling 197
+falling 198
+falling 199
