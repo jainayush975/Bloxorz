@@ -1,11 +1,11 @@
-#####BLOXORZ
+BLOXORZ
 ===========================
 	In this game, there is a movable cuboidal block. The goal of the player is to make it fall into a square hole
 	This game build in cpp using openGL library for graphics.
     	This is a 2D game.
 
 
-#####Game description :
+Game description :
 -------------------------
   * In game we need to go to hole.
 	* The Block can rotate along any of its axis.
@@ -29,7 +29,7 @@
 				(v)  Block and Destination Tile :- YELLOW
 
 
-#####Game Controls:
+## Game Controls: ##
 
     Keyboard:
       * up , down - To move the block up or down on plane respectively.
@@ -45,27 +45,26 @@
 			* Scroll up to zoom in and down to zoom out.
 
 
-####Game End:
-      * If block fall, Game Over.
+## Game End: ##
+      * If block falls, Game Over.
 
-####Cheers enjoy the game!!
+## Cheers enjoy the game!! ##
 
-
-####Additional Features
+## Additional Features ##
   * Score display using 7 segment.
   * Added Background music to make game more interesting.
 	* Added special sound effects for different actoins.
 	* Different views
   * Mouse + keyboard controls.
-	
 
-### Dependencies:
-##### Linux/Windows/ Mac OSX - Dependencies: (Recommended)
+
+# Dependencies:
+## Linux/Windows/ Mac OSX - Dependencies: (Recommended)
 * GLFW
 * GLAD
 * GLM
 
-##### Linux - Dependencies: (alternative)
+## Linux - Dependencies: (alternative)
 * FreeGLUT
 * GLEW
 * GLM
